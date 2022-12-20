@@ -11,48 +11,132 @@ datasource db {
 }
 
 model Member {
-  id            String        @id @default(cuid())
-  displayName   String
-  emailAddress  String        @db.Text
-  username      String        @db.MediumText
-  birthdate     DateTime
-  avatar        String?       @db.Text
-  password      String        @db.Text
-  tosAgree      Boolean
-  privacyAgree  Boolean
-  sessions      Session[]     @relation("member_session")
-  roles         MemberRole[]
-  status        Boolean       @default(true)
-  creationAt    DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id              String        @id @default(cuid())
+  firstName       String        @db.VarChar(30)
+  middleInitial   String        @db.VarChar(1)
+  lastName        String        @db.VarChar(40)
+  protectIdentity Boolean       @default(false)
+  displayName     String?
+  username        String        @db.MediumText
+  birthdate       DateTime
+  password        String        @db.Text
+  tosAgree        Boolean
+  privacyAgree    Boolean
+  sessions        Session[]     @relation("member_session")
+  roles           MemberRole[]  @relation("member_role")
+  media           MediaContent[]  @relation("member_media")
+  emails          EmailAddress[]  @relation("member_email")
+  tickets         MemberOnTicket[] @relation("member_ticket")
+  status          Boolean       @default(true)
+  creationAt      DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model EmailAddress {
+  id              String        @id @default(cuid())
+  email           String        @unique
+  status          Boolean       @default(true)
+  default         Boolean       @default(false)
+  memberId        String
+  member          Member        @relation("member_email", fields: [memberId], references: [id])
+  creationAt      DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model TicketAttachment {
+  id              String        @id @default(cuid())
+  content         String        @db.Text
+  contentType     MediaContentType
+  ticketMessageId String
+  ticketMessage   TicketMessage @relation(fields: [ticketMessageId], references: [id])
+  status          Boolean       @default(true)
+  creationAt      DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model TicketMessage {
+  id              String        @id @default(cuid())
+  message         String?
+  attachments     TicketAttachment[]
+  ticketId        String
+  ticket          Ticket        @relation(fields: [ticketId], references: [id])
+  status          Boolean       @default(true)
+  creationAt      DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model MemberOnTicket {
+  ticket          Ticket        @relation("", fields: [ticketId], references: [id])
+  ticketId        String
+  member          Member        @relation("member_ticket", fields: [memberId], references: [id])
+  memberId        String
+  creator         Boolean
+  status          Boolean       @default(true)
+  creationAt      DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Ticket {
+  id              String        @id @default(cuid())
+  subject         String        @db.Text
+  messages        TicketMessage[]
+  members         MemberOnTicket[]
+  status          Boolean       @default(true)
+  creationAt      DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+enum MediaContentType {
+  VIDEO_MP4
+  VIDEO_MOV
+  VIDEO_WMV
+  VIDEO_MKV
+  AUDIO_MP3
+  AUDIO_WAV
+  IMAGE_JPG
+  IMAGE_WEBP
+  IMAGE_PNG
+  GIF
+  TEXT
+}
+
+model MediaContent {
+  id              String        @id @default(cuid())
+  contentType     MediaContentType
+  content         String
+  status          Boolean       @default(true)
+  memberId        String
+  member          Member        @relation("member_media", fields: [memberId], references: [id])
+  creationAt      DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model MemberRole {
-  id            String        @id @default(cuid())
-  memberId      String
-  member        Member        @relation(fields: [memberId], references: [id])
-  roleId        String
-  role          Role          @relation(fields: [roleId], references: [id])
-  creationAt    DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id              String        @id @default(cuid())
+  memberId        String
+  member          Member        @relation("member_role", fields: [memberId], references: [id])
+  roleId          String
+  role            Role          @relation(fields: [roleId], references: [id])
+  creationAt      DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model Role {
-  id            String        @id @default(cuid())
-  name          String        @db.Text
-  weight        Int           @db.Int @unique
-  status        Boolean       @default(true)
-  members       MemberRole[]
-  creationAt    DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id              String        @id @default(cuid())
+  name            String        @db.Text
+  weight          Int           @db.Int
+  status          Boolean       @default(true)
+  members         MemberRole[]
+  creationAt      DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model Session {
-  id            String        @id @default(cuid())
-  accessToken   String        @db.Text
-  memberId      String
-  member        Member        @relation("member_session", fields: [memberId], references: [id])
-  status        Boolean       @default(true)
-  creationAt    DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id              String        @id @default(cuid())
+  accessToken     String        @db.Text
+  memberId        String
+  member          Member        @relation("member_session", fields: [memberId], references: [id])
+  status          Boolean       @default(true)
+  creationAt      DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
