@@ -132,22 +132,28 @@ model Session {
   updatedAt       DateTime      @updatedAt
 }
 
+enum TicketType {
+  TECH_SUPPORT
+  BILLING
+}
+
 model Ticket {
   id         Int          @id @default(autoincrement())
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @default(now())
   name       String
   title      String
-  detail     String?
+  ticketType TicketType
   email      String
   note       String?
   isComplete Boolean
   priority   String
   assignedTo User?        @relation(fields: [userId], references: [id]) // Optional if sales tickets without account.
-  media Content[]
+  media      Content[]
+  comments   Comments[]
 }
 
-// Responses on ticket.
+// Responses on ticket, the first comment will the the initial body of the client opening a ticket.
 model Comments {
     id       String   @id @default(cuid())
     createdAt  DateTime     @default(now())
