@@ -24,10 +24,12 @@ model Member {
   privacyAgree    Boolean
   sessions        Session[]     @relation("member_session")
   roles           MemberRole[]  @relation("member_role")
-  media           MediaContent[]  @relation("member_media")
-  emails          EmailAddress[]  @relation("member_email")
+  content         Content[]  @relation("member_")
+  emails          EmailAddress[]  @unique @relation("member_email")
   tickets         MemberOnTicket[] @relation("member_ticket")
   status          Boolean       @default(true)
+  todos           Todos[]                                        // Internal Help
+  notes           Notes[]                                        // Internal Help
   creationAt      DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 }
@@ -43,50 +45,39 @@ model EmailAddress {
   updatedAt       DateTime      @updatedAt
 }
 
-model TicketAttachment {
-  id              String        @id @default(cuid())
-  content         String        @db.Text
-  contentType     MediaContentType
-  ticketMessageId String
-  ticketMessage   TicketMessage @relation(fields: [ticketMessageId], references: [id])
-  status          Boolean       @default(true)
-  creationAt      DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+model Webhooks {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  name      String
+  url       String
+  type      Hook
+  active    Boolean
+  secret    String?
+  createdBy String
 }
 
-model TicketMessage {
-  id              String        @id @default(cuid())
-  message         String?
-  attachments     TicketAttachment[]
-  ticketId        String
-  ticket          Ticket        @relation(fields: [ticketId], references: [id])
-  status          Boolean       @default(true)
-  creationAt      DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+model Todos {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  text      String
+  done      Boolean  @default(false)
+  createdBy User     @relation(fields: [userId], references: [id])
+  userId    Int
 }
 
-model MemberOnTicket {
-  ticket          Ticket        @relation("", fields: [ticketId], references: [id])
-  ticketId        String
-  member          Member        @relation("member_ticket", fields: [memberId], references: [id])
-  memberId        String
-  creator         Boolean
-  status          Boolean       @default(true)
-  creationAt      DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+model Notes {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  title     String
+  note      String
+  createdBy User     @relation(fields: [userId], references: [id])
+  userId    Int
 }
 
-model Ticket {
-  id              String        @id @default(cuid())
-  subject         String        @db.Text
-  messages        TicketMessage[]
-  members         MemberOnTicket[]
-  status          Boolean       @default(true)
-  creationAt      DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-}
-
-enum MediaContentType {
+enum ContentType {
   VIDEO_MP4
   VIDEO_MOV
   VIDEO_WMV
@@ -100,13 +91,13 @@ enum MediaContentType {
   TEXT
 }
 
-model MediaContent {
+model Content {
   id              String        @id @default(cuid())
-  contentType     MediaContentType
+  contentType     ContentType
   content         String
   status          Boolean       @default(true)
   memberId        String
-  member          Member        @relation("member_media", fields: [memberId], references: [id])
+  member          Member        @relation("member_", fields: [memberId], references: [id])
   creationAt      DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 }
@@ -139,4 +130,30 @@ model Session {
   status          Boolean       @default(true)
   creationAt      DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+}
+
+model Ticket {
+  id         Int          @id @default(autoincrement())
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @default(now())
+  name       String
+  title      String
+  detail     String?
+  email      String
+  note       String?
+  isComplete Boolean
+  priority   String
+  assignedTo User?        @relation(fields: [userId], references: [id]) // Optional if sales tickets without account.
+  media Content[]
+}
+
+// Responses on ticket.
+model Comments {
+    id       String   @id @default(cuid())
+    createdAt  DateTime     @default(now())
+    updatedAt  DateTime     @default(now())
+    message  String
+    name     String
+    Ticket   Ticket?  @relation(fields: [ticketId], references: [id])
+    addMedia Content[]
 }
